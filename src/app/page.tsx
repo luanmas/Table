@@ -124,7 +124,7 @@ const RenderCell = (value: string | boolean | inputSelectProps[], columnType: st
 } 
 
 export default function Home() {
-  const [data, setData] = useState<initialValueProps[]>(initialValue);
+  const data: initialValueProps[] = initialValue;
   const [dataEdited, setDataEdited] = useState<initialValueProps[]>([]);
 
   const handleCellUpdate = (rowIndex: number, columnName: keyof initialValueProps, newValue: string | boolean) => {
@@ -132,9 +132,18 @@ export default function Home() {
       const updatedData = [...data];
       updatedData[rowIndex][columnName] = newValue;
       updatedData[rowIndex].editado = true
+      
+      const isExist = dataEdited.findIndex((obj) => obj.id === updatedData[rowIndex].id)
+      if(isExist === -1) {
+        setDataEdited((rest) => [...rest, updatedData[rowIndex]])
+      } else {
+        const novosObjetos = [...dataEdited]
+        novosObjetos[isExist] = updatedData[rowIndex]
+        setDataEdited(novosObjetos);
+      }
 
-      setDataEdited(updatedData[rowIndex]);
-      setData(updatedData);
+      // setDataEdited(updatedData[rowIndex]);
+      // setData(updatedData);
       console.log(dataEdited);
       // console.log(updatedData);
     }
