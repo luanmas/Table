@@ -1,113 +1,170 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/TableBase";
+
+type ColumnsProps = {
+  name: string;
+  cell: string;
+  label: string;
+}
+
+type inputSelectProps = {
+  option: string
+  selected: boolean
+}
+
+type initialValueProps = {
+  id: string;
+  produto: string;
+  marca: inputSelectProps[];
+  ativo: boolean;
+  qtdmin: string;
+  unidade: string;
+  editado?: boolean;
+}
+
+const columns: ColumnsProps[] = [
+  {
+    name: 'Produto',
+    label: 'produto',
+    cell: 'text',
+  },
+  {
+    name: 'Marca',
+    label: 'marca',
+    cell: 'select',
+  },
+  {
+    name: 'Quantidade Mínima',
+    label: 'qtdmin',
+    cell: 'input',
+  },
+  {
+    name: 'Ativo',
+    label: 'ativo',
+    cell: 'radio',
+  },
+  {
+    name: 'Unidade',
+    label: 'unidade',
+    cell: 'text',
+  }
+]
+
+const initialValue: initialValueProps[] = [
+  {
+    id: "1",
+    produto: 'Maminha',
+    marca: [{ option: "Friboi", selected: true }, { option: "Sadia", selected: false }, { option: "Angus", selected: false },],
+    qtdmin: '10',
+    ativo: false,
+    unidade: 'KG',
+  },
+  {
+    id: "2",
+    produto: 'Alcatra',
+    marca: [{ option: "Friboi", selected: false }, { option: "Sadia", selected: true }, { option: "Angus", selected: false },],
+    qtdmin: '8',
+    ativo: true,
+    unidade: 'KG',
+  },
+]
+
+const RenderCell = (value: string | boolean | inputSelectProps[], columnType: string, onChange: (newValue: string | boolean | inputSelectProps[]) => void) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeout(() => {}, 500)
+    onChange(e.target.value);
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.checked);
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedIndex = e.target.selectedIndex;
+      const updatedOptions = value instanceof Array && value.map((option, index) => ({
+        ...option,
+        selected: index === selectedIndex
+      }))
+      onChange(updatedOptions);
+  };
+
+  if (columnType === 'input') {
+    return (
+      <input 
+        type="text" 
+        value={value as string}
+        onBlur={handleInputChange}
+        onChange={handleInputChange}
+        className="text-black"
+      />
+    );
+  } else if (columnType === 'radio') {
+    return (
+      <input 
+        type="checkbox" 
+        checked={value as boolean} 
+        onChange={handleCheckboxChange} 
+      />
+    );
+  } else if (columnType === 'select' && value instanceof Array) {
+    return (
+      <select value={value.find(option => option.selected)?.option} onChange={handleSelectChange} className="text-black">
+        {value.map((option, index) => (
+          <option key={index} value={option.option}>
+            {option.option}
+          </option>
+        ))}
+      </select>
+    )
+  } else {
+    return value;
+  }
+} 
 
 export default function Home() {
+  const [data, setData] = useState<initialValueProps[]>(initialValue);
+  const [dataEdited, setDataEdited] = useState<initialValueProps[]>([]);
+
+  const handleCellUpdate = (rowIndex: number, columnName: keyof initialValueProps, newValue: string | boolean) => {
+    if (data && data[rowIndex]) {
+      const updatedData = [...data];
+      updatedData[rowIndex][columnName] = newValue;
+      updatedData[rowIndex].editado = true
+
+      setDataEdited(updatedData[rowIndex]);
+      setData(updatedData);
+      console.log(dataEdited);
+      // console.log(updatedData);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="flex flex-col justify-center items-center h-screen w-full bg-slate-700">
+      <Table className="w-[800px] m-auto">
+        <TableHeader>
+          <TableRow>
+            {columns.map((col) => (
+                <TableHead className="w-[100px]" key={col.name}>{col.name}</TableHead>              
+            ))}
+          </TableRow>          
+      </TableHeader>
+      <TableBody>
+          {initialValue.map((row, rowIndex) => (
+            <TableRow key={row.id}>
+              {columns.map((col) => (
+                <TableCell key={col.name}>
+                  {RenderCell(row[col.label as keyof initialValueProps], col.cell, (newValue) => handleCellUpdate(rowIndex, col.label, newValue))}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+        <div>
+          <pre>{JSON.stringify(dataEdited,null,2)}</pre>  
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      </Table>
     </main>
   );
 }
